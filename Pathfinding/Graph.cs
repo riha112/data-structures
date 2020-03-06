@@ -89,7 +89,112 @@ namespace Pathfinding
 
         private List<int> AStarPathFinding(int from, int to)
         {
-            return new List<int>();
+            List<int> openSet = new List<int>() { from };
+
+            // Keeps track of path, by saving origin node which led to target
+            Dictionary<int, int?> cameFrom = new Dictionary<int, int?>();
+
+            // Distance from source to current node
+            Dictionary<int, int> gScore = new Dictionary<int, int>();
+
+            // Distance to target from current node
+            Dictionary<int, int> fScore = new Dictionary<int, int>();
+
+            foreach(var vertice in edges)
+            {
+                gScore.Add(vertice.Key, int.MaxValue);
+                fScore.Add(vertice.Key, int.MaxValue);
+                cameFrom.Add(vertice.Key, null);
+            }
+            // Distance from source to source is 0
+            gScore[from] = 0;
+
+            //! Bad distance calculator, but for example will work.
+            // In real word example you should have some metric with which to
+            // calculate the distance like distance between two points in 2D space
+            fScore[from] = GetDistance(from, to);
+
+            // Unreachable
+            if(fScore[from] == int.MaxValue)
+                return null;
+
+            int current;
+            while(openSet.Count > 0)
+            {
+                // Selects element with smallest distance to target
+                openSet = openSet.OrderBy(x => fScore[x]).ToList();
+                current = openSet[0];
+
+                // Target found
+                if(current == to)
+                    return ReconstructPath(current, cameFrom);
+
+                openSet.Remove(current);
+
+                // Loops through out all neighbors
+                foreach(int vertice in edges[current])
+                {
+                    int tentativeGScore = gScore[current] + 1;
+
+                    if(tentativeGScore < gScore[vertice])
+                    {
+                        cameFrom[vertice] = current;
+                        gScore[vertice] = tentativeGScore;
+
+                        int myFDist = GetDistance(vertice, to);
+                        if(myFDist == int.MaxValue)
+                            continue;
+
+                        if(!openSet.Contains(vertice))
+                            openSet.Add(vertice);
+                        fScore[vertice] = myFDist + gScore[vertice];
+                    }
+                }
+            }
+            return null;
+        }
+
+        private List<int> ReconstructPath(int current, Dictionary<int, int?> cameFrom)
+        {
+            List<int> path = new List<int>(){current};
+            while(cameFrom[current] != null)
+            {
+                current = cameFrom[current].GetValueOrDefault();
+                path.Add(current);
+            }
+            path.Reverse();
+            return path;
+        }
+
+        private int GetDistance(int from, int to)
+        {
+            if(from == to)
+                return 0;
+
+            HashSet<int> activeLayer = new HashSet<int>() { from };
+            HashSet<int> visited = new HashSet<int>();
+
+            int distance = 1;
+
+            while(activeLayer.Count > 0)
+            {
+                HashSet<int> tmp = new HashSet<int>();
+                foreach(int vertice in activeLayer)
+                {
+                    visited.Add(vertice);
+                    foreach(int neighbor in edges[vertice])
+                    {
+                        if(neighbor == to)
+                            return distance;
+                        else if(!visited.Contains(neighbor))
+                            tmp.Add(neighbor);
+                    }
+                }
+                activeLayer = tmp;
+                distance++;
+            }
+
+            return int.MaxValue;
         }
 
         private List<int> DijkstraPathFinding(int from, int to)
@@ -118,10 +223,8 @@ namespace Pathfinding
 
                 unvisited.Remove(current);
 
-                System.Console.WriteLine("Current:{0}", current);
                 if(!IsAccessableFrom(from, current))
                     continue;
-                System.Console.WriteLine("-is accesable");
 
                 int currentsDistance = dist[current];
                 // Loops through out all neighbors
@@ -147,7 +250,7 @@ namespace Pathfinding
             while(prev[curr] != null)
             {
                 path.Add(curr);
-                curr = prev[curr] ?? 0;
+                curr = prev[curr].GetValueOrDefault();
             };
             path.Add(from); // Start position
             path.Reverse();
