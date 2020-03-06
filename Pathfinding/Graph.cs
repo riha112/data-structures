@@ -1,4 +1,9 @@
 using System.Collections.Generic;
+using System.Linq;
+public enum PathFindingType : byte
+{
+    AStar, Dijkstra
+}
 
 namespace Pathfinding
 {
@@ -36,6 +41,8 @@ namespace Pathfinding
         // Breath First Search algorithm
         public bool IsAccessableFrom(int fromValue, int targetValue)
         {
+            if(fromValue == targetValue) return true;
+
             HashSet<int> encountered = new HashSet<int>();  // NOTE: Better performance for scaling than List
 
             // Contains values of vertices that are reached, but not checked
@@ -65,7 +72,90 @@ namespace Pathfinding
         }
         #endregion
 
-        #region PathFinding
+        #region PathFinding A* and Dijkstra
+
+        public List<int> GetPath(int from, int to, PathFindingType type = PathFindingType.AStar)
+        {
+            switch(type)
+            {
+                case PathFindingType.AStar:
+                    return AStarPathFinding(from, to);
+                case PathFindingType.Dijkstra:
+                    return DijkstraPathFinding(from, to);
+                default:
+                    throw new System.Exception("Unknown pathfinding type");
+            }
+        }
+
+        private List<int> AStarPathFinding(int from, int to)
+        {
+            return new List<int>();
+        }
+
+        private List<int> DijkstraPathFinding(int from, int to)
+        {
+            List<int> unvisited = new List<int>(edges.Keys);
+
+            Dictionary<int, int> dist = new Dictionary<int, int>();
+            Dictionary<int, int?> prev = new Dictionary<int, int?>();
+
+            foreach(var vertice in edges)
+            {
+                dist.Add(vertice.Key, int.MaxValue);
+                prev.Add(vertice.Key, null);
+            }
+            dist[from] = 0;
+
+            while(unvisited.Count > 0)
+            {
+                // Finds node with smallest distance
+                unvisited = unvisited.OrderBy(x => dist[x]).ToList();
+                int current = unvisited[0];
+
+                // If node is target then path is found
+                if(current == to)
+                    break;
+
+                unvisited.Remove(current);
+
+                System.Console.WriteLine("Current:{0}", current);
+                if(!IsAccessableFrom(from, current))
+                    continue;
+                System.Console.WriteLine("-is accesable");
+
+                int currentsDistance = dist[current];
+                // Loops through out all neighbors
+                foreach(int vertice in edges[current])
+                {
+                    // Distance from current node + edges length
+                    int alt = currentsDistance + 1;
+                    if(alt < dist[vertice])
+                    {
+                        dist[vertice] = alt;
+                        prev[vertice] = current;
+                    }
+                }
+            }
+
+            // If target not reached
+            if(prev[to] == null)
+                return null;
+            
+            // Rebuilds path
+            List<int> path = new List<int>();
+            int curr = to;  // End position
+            while(prev[curr] != null)
+            {
+                path.Add(curr);
+                curr = prev[curr] ?? 0;
+            };
+            path.Add(from); // Start position
+            path.Reverse();
+            // --end of : path rebuilding --
+
+            return path;
+        }
+
         #endregion
     }
 }
