@@ -538,5 +538,58 @@ namespace Sorting
                 Data[i] = output[i];
         }
         #endregion
+
+        /// <summary>
+        /// Uses binary search algorithm to find element.
+        /// </summary>
+        /// <param name="searchable">Target element</param>
+        /// <returns>On success returns ID of element, of fail returns -1</returns>
+        public int BinarySearch(T searchable)
+        {
+            var range = (min: 0, max: Length - 1);
+            T curr;
+            
+            while (range.max >= range.min)
+            {
+                var mid = (range.max + range.min) / 2;
+                curr = Data[mid];
+                
+                if (curr.CompareTo(searchable) == 0)
+                    return mid;
+
+                if (curr.CompareTo(searchable) > 0)
+                    range.max = mid - 1;
+                else
+                    range.min = mid + 1;
+            }            
+            
+            return -1;
+        }
+        
+        /// <summary>
+        /// Merges two same type sorted list
+        /// </summary>
+        /// <param name="A">Sorted list A</param>
+        /// <param name="B">Sorted list B</param>
+        /// <returns>Merged sorted list</returns>
+        public static SortableList<T> MergeSort(SortableList<T> A, SortableList<T> B)
+        {
+            SortableList<T> joined = new SortableList<T>();
+            (var a, var b) = (0, 0);
+
+            while (a < A.Length && b < B.Length)
+            {
+                if(A[a].CompareTo(B[b]) < 0)
+                    joined.Add(A[a++]);
+                else
+                    joined.Add(B[b++]);
+            }
+
+            while (a < A.Length) joined.Add(A[a++]);
+            while (b < B.Length) joined.Add(B[b++]);
+
+            return joined;
+        }
+        
     }
 }
